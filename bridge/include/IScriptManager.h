@@ -27,6 +27,8 @@
 #ifndef _INCLUDE_SOURCEMOD_BRIDGE_INCLUDE_ISCRIPTMANAGER_H_
 #define _INCLUDE_SOURCEMOD_BRIDGE_INCLUDE_ISCRIPTMANAGER_H_
 
+#include <string> // :^)
+
 #include <sp_vm_api.h>
 #include <IPluginSys.h>
 #include <sh_vector.h>
@@ -47,9 +49,25 @@ enum LibraryAction
 
 struct AutoConfig
 {
-	SourceHook::String autocfg;
-	SourceHook::String folder;
+	std::string autocfg;
+	std::string folder;
 	bool create;
+	
+	AutoConfig() : create(false) {}
+
+	AutoConfig(const std::string_view autocfg, const std::string_view folder, bool create)
+	: autocfg(autocfg),
+	  folder(folder),
+	  create(false)
+	{
+	}
+	
+	bool Equals(const AutoConfig &other) const
+	{
+		return autocfg == other.autocfg
+			&& folder == other.folder
+			&& create == other.create;
+	}
 };
 
 class SMPlugin : public IPlugin

@@ -713,21 +713,16 @@ AutoConfig *CPlugin::GetConfig(size_t i)
 
 void CPlugin::AddConfig(bool autoCreate, const char *cfg, const char *folder)
 {
+	auto c = ke::MakeUnique<AutoConfig>(cfg, folder, autoCreate);
+	
 	/* Do a check for duplicates to prevent double-execution */
 	for (auto &config : m_configs)
 	{
-		if (config->autocfg.compare(cfg) == 0
-			&& config->folder.compare(folder) == 0
-			&& config->create == autoCreate)
+		if (config->Equals(*c.get()))
 		{
 			return;
 		}
 	}
-
-	auto c = ke::MakeUnique<AutoConfig>();
-	c->autocfg = cfg;
-	c->folder = folder;
-	c->create = autoCreate;
 	m_configs.append(ke::Move(c));
 }
 
