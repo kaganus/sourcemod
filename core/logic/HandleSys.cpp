@@ -55,21 +55,12 @@ inline HandleError IdentityHandle(IdentityToken_t *token, unsigned int *index)
 
 HandleSystem::HandleSystem()
 {
-	m_Handles = new QHandle[HANDLESYS_MAX_HANDLES + 1];
-	memset(m_Handles, 0, sizeof(QHandle) * (HANDLESYS_MAX_HANDLES + 1));
+	m_Handles = ke::UniquePtr<QHandle[]>(new QHandle[HANDLESYS_MAX_HANDLES + 1]());
 
-	m_Types = new QHandleType[HANDLESYS_TYPEARRAY_SIZE];
-	memset(m_Types, 0, sizeof(QHandleType) * HANDLESYS_TYPEARRAY_SIZE);
+	m_Types = ke::UniquePtr<QHandleType[]>(new QHandleType[HANDLESYS_TYPEARRAY_SIZE]());
 
 	m_TypeTail = 0;
 }
-
-HandleSystem::~HandleSystem()
-{
-	delete [] m_Handles;
-	delete [] m_Types;
-}
-
 
 HandleType_t HandleSystem::CreateType(const char *name, 
 									  IHandleTypeDispatch *dispatch, 
@@ -206,7 +197,7 @@ HandleType_t HandleSystem::CreateType(const char *name,
 	pType->dispatch = dispatch;
 	if (name && name[0] != '\0')
 	{
-		pType->name = new ke::AString(name);
+		pType->name = name;
 		m_TypeLookup.insert(name, pType);
 	}
 
@@ -242,7 +233,7 @@ bool HandleSystem::FindHandleType(const char *name, HandleType_t *aResult)
 		return false;
 
 	if (aResult)
-		*aResult = type - m_Types;
+		*aResult = type - m_Types.get();
 
 	return true;
 }
@@ -924,8 +915,8 @@ bool HandleSystem::RemoveType(HandleType_t type, IdentityToken_t *ident)
 	pType->dispatch = NULL;
 
 	/* Remove it from the type cache. */
-	if (pType->name)
-		m_TypeLookup.remove(pType->name->chars());
+	if (pType->name.length() > 0)
+		m_TypeLookup.remove(pType->name.c_str());
 
 	return true;
 }
@@ -1050,8 +1041,8 @@ bool HandleSystem::TryAndFreeSomeHandles()
 			continue; /* We may have gaps, it's fine. */
 		}
 
-		if (m_Types[i].name)
-			pTypeName = m_Types[i].name->chars();
+		if (m_Types[i].name.length() > 0)
+			pTypeName = m_Types[i].name.c_str();
 		else
 			pTypeName = "ANON";
 
@@ -1130,8 +1121,8 @@ void HandleSystem::Dump(const HandleReporter &fn)
 		unsigned int size = 0;
 		unsigned int parentIdx;
 		bool bresult;
-		if (pType->name)
-			type = pType->name->chars();
+		if (pType->name.length() > 0)
+			type = pType->name.c_str();
 
 		if ((parentIdx = m_Handles[i].clone) != 0)
 		{

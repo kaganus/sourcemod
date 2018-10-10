@@ -32,6 +32,8 @@
 #ifndef _INCLUDE_SOURCEMOD_HANDLESYSTEM_H_
 #define _INCLUDE_SOURCEMOD_HANDLESYSTEM_H_
 
+#include <string>
+
 #include <IHandleSys.h>
 #include <stdio.h>
 #include <sm_namehashset.h>
@@ -105,11 +107,11 @@ struct QHandleType
 	TypeAccess typeSec;
 	HandleAccess hndlSec;
 	unsigned int opened;
-	ke::AutoPtr<ke::AString> name;
+	std::string name;
 
 	static inline bool matches(const char *key, const QHandleType *type)
 	{
-		return type->name && type->name->compare(key) == 0;
+		return type->name == key;
 	}
 	static inline uint32_t hash(const detail::CharsAndLength &key)
 	{
@@ -126,7 +128,6 @@ class HandleSystem :
 	friend class ShareSystem;
 public:
 	HandleSystem();
-	~HandleSystem();
 public: //IHandleSystem
 
 	HandleType_t CreateType(const char *name,
@@ -225,8 +226,8 @@ protected:
 	bool TryAndFreeSomeHandles();
 	HandleError TryAllocHandle(unsigned int *handle);
 private:
-	QHandle *m_Handles;
-	QHandleType *m_Types;
+	ke::UniquePtr<QHandle[]> m_Handles;
+	ke::UniquePtr<QHandleType[]> m_Types;
 	NameHashSet<QHandleType *> m_TypeLookup;
 	unsigned int m_TypeTail;
 	unsigned int m_FreeTypes;
