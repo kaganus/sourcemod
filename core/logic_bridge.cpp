@@ -331,54 +331,56 @@ void UTIL_ConsolePrint(const char *fmt, ...)
 	va_end(ap);
 }
 
-#if SOURCE_ENGINE == SE_LEFT4DEAD
-#define GAMEFIX "2.l4d"
-#elif SOURCE_ENGINE == SE_LEFT4DEAD2
-#define GAMEFIX "2.l4d2"
-#elif SOURCE_ENGINE == SE_NUCLEARDAWN
-#define GAMEFIX "2.nd"
-#elif SOURCE_ENGINE == SE_ALIENSWARM
-#define GAMEFIX "2.swarm"
-#elif SOURCE_ENGINE == SE_ORANGEBOX
-#define GAMEFIX "2.ep2"
-#elif SOURCE_ENGINE == SE_BLOODYGOODTIME
-#define GAMEFIX "2.bgt"
-#elif SOURCE_ENGINE == SE_EYE
-#define GAMEFIX "2.eye"
-#elif SOURCE_ENGINE == SE_CSS
-#define GAMEFIX "2.css"
-#elif SOURCE_ENGINE == SE_HL2DM
-#define GAMEFIX "2.hl2dm"
-#elif SOURCE_ENGINE == SE_DODS
-#define GAMEFIX "2.dods"
-#elif SOURCE_ENGINE == SE_SDK2013
-#define GAMEFIX "2.sdk2013"
-#elif SOURCE_ENGINE == SE_BMS
-#define GAMEFIX "2.bms"
-#elif SOURCE_ENGINE == SE_TF2
-#define GAMEFIX "2.tf2"
-#elif SOURCE_ENGINE == SE_DARKMESSIAH
-#define GAMEFIX "2.darkm"
-#elif SOURCE_ENGINE == SE_PORTAL2
-#define GAMEFIX "2.portal2"
-#elif SOURCE_ENGINE == SE_BLADE
-#define GAMEFIX "2.blade"
-#elif SOURCE_ENGINE == SE_INSURGENCY
-#define GAMEFIX "2.insurgency"
-#elif SOURCE_ENGINE == SE_DOI
-#define GAMEFIX "2.doi"
-#elif SOURCE_ENGINE == SE_CSGO
-#define GAMEFIX "2.csgo"
-#elif SOURCE_ENGINE == SE_CONTAGION
-#define GAMEFIX "2.contagion"
-#else
-#define GAMEFIX "2.ep1"
-#endif
-
 static ServerGlobals serverGlobals;
 
-CoreProviderImpl sCoreProviderImpl;
+constexpr const char *GetGameSuffix()
+{
+#if SOURCE_ENGINE == SE_LEFT4DEAD
+	return "2.l4d";
+#elif SOURCE_ENGINE == SE_LEFT4DEAD2
+	return "2.l4d2";
+#elif SOURCE_ENGINE == SE_NUCLEARDAWN
+	return "2.nd";
+#elif SOURCE_ENGINE == SE_ALIENSWARM
+	return "2.swarm";
+#elif SOURCE_ENGINE == SE_ORANGEBOX
+	return "2.ep2";
+#elif SOURCE_ENGINE == SE_BLOODYGOODTIME
+	return "2.bgt";
+#elif SOURCE_ENGINE == SE_EYE
+	return "2.eye";
+#elif SOURCE_ENGINE == SE_CSS
+	return "2.css";
+#elif SOURCE_ENGINE == SE_HL2DM
+	return "2.hl2dm";
+#elif SOURCE_ENGINE == SE_DODS
+	return "2.dods";
+#elif SOURCE_ENGINE == SE_SDK2013
+	return "2.sdk2013";
+#elif SOURCE_ENGINE == SE_BMS
+	return "2.bms";
+#elif SOURCE_ENGINE == SE_TF2
+	return "2.tf2";
+#elif SOURCE_ENGINE == SE_DARKMESSIAH
+	return "2.darkm";
+#elif SOURCE_ENGINE == SE_PORTAL2
+	return "2.portal2";
+#elif SOURCE_ENGINE == SE_BLADE
+	return "2.blade";
+#elif SOURCE_ENGINE == SE_INSURGENCY
+	return "2.insurgency";
+#elif SOURCE_ENGINE == SE_DOI
+	return "2.doi";
+#elif SOURCE_ENGINE == SE_CSGO
+	return "2.csgo";
+#elif SOURCE_ENGINE == SE_CONTAGION
+	return "2.contagion";
+#else
+	return "2.ep1";
+#endif
+}
 
+CoreProviderImpl sCoreProviderImpl;
 CoreProviderImpl::CoreProviderImpl()
 {
 	this->sm = &g_SourceMod;
@@ -401,7 +403,7 @@ CoreProviderImpl::CoreProviderImpl()
 	this->UpdateAdminCmdFlags = update_admin_cmd_flags;
 	this->LookForCommandAdminFlags = look_for_cmd_admin_flags;
 	this->GetGlobalTarget = get_global_target;
-	this->gamesuffix = GAMEFIX;
+	this->gamesuffix = GetGameSuffix();
 	this->serverGlobals = &::serverGlobals;
 	this->serverFactory = nullptr;
 	this->engineFactory = nullptr;

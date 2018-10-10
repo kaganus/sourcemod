@@ -40,7 +40,8 @@
 ConVarManager g_ConVarManager;
 
 const ParamType CONVARCHANGE_PARAMS[] = {Param_Cell, Param_String, Param_String};
-typedef List<const ConVar *> ConVarList;
+
+using ConVarList = List<const ConVar *>;
 NameHashSet<ConVarInfo *> convar_cache;
 
 class ConVarReentrancyGuard

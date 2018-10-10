@@ -271,7 +271,7 @@ class SMConfig(object):
       '-fvisibility=hidden',
     ]
     cxx.cxxflags += [
-      '-std=c++11',
+      '-std=c++1z',
       '-fno-exceptions',
       '-fno-threadsafe-statics',
       '-Wno-non-virtual-dtor',
@@ -330,6 +330,7 @@ class SMConfig(object):
       '/EHsc',
       '/GR-',
       '/TP',
+      '-std:c++17',
     ]
     cxx.linkflags += [
       'kernel32.lib',

@@ -85,8 +85,6 @@ CPlugin::CPlugin(const char *file)
 CPlugin::~CPlugin()
 {
 	DestroyIdentity();
-	for (size_t i=0; i<m_configs.size(); i++)
-		delete m_configs[i];
 	m_configs.clear();
 }
 
@@ -96,7 +94,7 @@ void CPlugin::InitIdentity()
 		return;
 
 	m_ident = g_ShareSys.CreateIdentity(g_PluginIdent, this);
-	m_handle = handlesys->CreateHandle(g_PluginType, this, g_PluginSys.GetIdentity(), g_PluginSys.GetIdentity(), NULL);
+	m_handle = handlesys->CreateHandle(g_PluginType, this, g_PluginSys.GetIdentity(), g_PluginSys.GetIdentity(), nullptr);
 	m_pRuntime->GetDefaultContext()->SetKey(1, m_ident);
 	m_pRuntime->GetDefaultContext()->SetKey(2, (IPlugin *)this);
 }
@@ -164,12 +162,12 @@ unsigned int CPlugin::CalcMemUsage()
 	unsigned int base_size =
 		sizeof(CPlugin)
 		+ sizeof(IdentityToken_t)
-		+ (m_configs.size() * (sizeof(AutoConfig *) + sizeof(AutoConfig)))
+		+ (m_configs.length() * (sizeof(AutoConfig *) + sizeof(AutoConfig)))
 		+ m_Props.mem_usage();
 
-	for (unsigned int i = 0; i < m_configs.size(); i++) {
-		base_size += m_configs[i]->autocfg.size();
-		base_size += m_configs[i]->folder.size();
+	for (auto& config : m_configs) {
+		base_size += config->autocfg.size();
+		base_size += config->folder.size();
 	}
 
 	for (auto i = m_Libraries.begin(); i != m_Libraries.end(); i++)
@@ -334,7 +332,7 @@ bool CPlugin::ReadInfo()
 
 void CPlugin::SyncMaxClients(int max_clients)
 {
-	if (m_MaxClientsVar == NULL)
+	if (m_MaxClientsVar == nullptr)
 	{
 		return;
 	}
@@ -398,16 +396,16 @@ void CPlugin::Call_OnAllPluginsLoaded()
 
 	cell_t result;
 	IPluginFunction *pFunction = m_pRuntime->GetFunctionByName("OnAllPluginsLoaded");
-	if (pFunction != NULL)
+	if (pFunction != nullptr)
 	{
 		pFunction->Execute(&result);
 	}
 
 	if (bridge->IsMapRunning())
 	{
-		if ((pFunction = m_pRuntime->GetFunctionByName("OnMapStart")) != NULL)
+		if ((pFunction = m_pRuntime->GetFunctionByName("OnMapStart")) != nullptr)
 		{
-			pFunction->Execute(NULL);
+			pFunction->Execute(nullptr);
 		}
 	}
 
@@ -473,7 +471,7 @@ void CPlugin::Call_OnLibraryAdded(const char *lib)
 
 void *CPlugin::GetPluginStructure()
 {
-	return NULL;
+	return nullptr;
 }
 
 // Only called during plugin construction.
@@ -501,7 +499,7 @@ IPluginContext *CPlugin::GetBaseContext()
 {
 	if (!m_pRuntime)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return m_pRuntime->GetDefaultContext();
@@ -509,7 +507,7 @@ IPluginContext *CPlugin::GetBaseContext()
 
 sp_context_t *CPlugin::GetContext()
 {
-	return NULL;
+	return nullptr;
 }
 
 const char *CPlugin::GetFilename()
@@ -700,39 +698,37 @@ void CPlugin::DependencyDropped(CPlugin *pOwner)
 
 size_t CPlugin::GetConfigCount()
 {
-	return (unsigned int)m_configs.size();
+	return (unsigned int)m_configs.length();
 }
 
 AutoConfig *CPlugin::GetConfig(size_t i)
 {
 	if (i >= GetConfigCount())
 	{
-		return NULL;
+		return nullptr;
 	}
 
-	return m_configs[i];
+	return m_configs[i].get();
 }
 
 void CPlugin::AddConfig(bool autoCreate, const char *cfg, const char *folder)
 {
 	/* Do a check for duplicates to prevent double-execution */
-	for (size_t i = 0; i < m_configs.size(); i++)
+	for (auto &config : m_configs)
 	{
-		if (m_configs[i]->autocfg.compare(cfg) == 0
-			&& m_configs[i]->folder.compare(folder) == 0
-			&& m_configs[i]->create == autoCreate)
+		if (config->autocfg.compare(cfg) == 0
+			&& config->folder.compare(folder) == 0
+			&& config->create == autoCreate)
 		{
 			return;
 		}
 	}
 
-	AutoConfig *c = new AutoConfig;
-
+	auto c = ke::MakeUnique<AutoConfig>();
 	c->autocfg = cfg;
 	c->folder = folder;
 	c->create = autoCreate;
-
-	m_configs.push_back(c);
+	m_configs.append(ke::Move(c));
 }
 
 void CPlugin::DropEverything()
@@ -835,7 +831,7 @@ void CPluginManager::CPluginIterator::OnPluginDestroyed(IPlugin *plugin)
 CPluginManager::CPluginManager()
 {
 	m_AllPluginsLoaded = false;
-	m_MyIdent = NULL;
+	m_MyIdent = nullptr;
 	m_LoadingLocked = false;
 
 	m_bBlockBadPlugins = true;
@@ -867,7 +863,7 @@ void CPluginManager::LoadAll_FirstPass(const char *config, const char *basedir)
 {
 	/* First read in the database of plugin settings */
 	m_AllPluginsLoaded = false;
-	LoadPluginsFromDir(basedir, NULL);
+	LoadPluginsFromDir(basedir, nullptr);
 }
 
 void CPluginManager::LoadPluginsFromDir(const char *basedir, const char *localpath)
@@ -875,7 +871,7 @@ void CPluginManager::LoadPluginsFromDir(const char *basedir, const char *localpa
 	char base_path[PLATFORM_MAX_PATH];
 
 	/* Form the current path to start reading from */
-	if (localpath == NULL)
+	if (localpath == nullptr)
 	{
 		libsys->PathFormat(base_path, sizeof(base_path), "%s", basedir);
 	} else {
@@ -902,7 +898,7 @@ void CPluginManager::LoadPluginsFromDir(const char *basedir, const char *localpa
 			&& (strcmp(dir->GetEntryName(), "optional") != 0))
 		{
 			char new_local[PLATFORM_MAX_PATH];
-			if (localpath == NULL)
+			if (localpath == nullptr)
 			{
 				/* If no path yet, don't add a former slash */
 				ke::SafeStrcpy(new_local, sizeof(new_local), dir->GetEntryName());
@@ -918,7 +914,7 @@ void CPluginManager::LoadPluginsFromDir(const char *basedir, const char *localpa
 			{
 				/* If the filename matches, load the plugin */
 				char plugin[PLATFORM_MAX_PATH];
-				if (localpath == NULL)
+				if (localpath == nullptr)
 				{
 					ke::SafeStrcpy(plugin, sizeof(plugin), name);
 				} else {
@@ -983,7 +979,7 @@ IPlugin *CPluginManager::LoadPlugin(const char *path, bool debug, PluginType typ
 	{
 		ke::SafeStrcpy(error, maxlength, pl->GetErrorMsg());
 		delete pl;
-		return NULL;
+		return nullptr;
 	}
 
 	if (res == LoadRes_AlreadyLoaded)
@@ -997,7 +993,7 @@ IPlugin *CPluginManager::LoadPlugin(const char *path, bool debug, PluginType typ
 			ke::SafeStrcpy(error, maxlength, "There is a global plugin loading lock in effect");
 		else
 			ke::SafeStrcpy(error, maxlength, "This plugin is blocked from loading (see plugin_settings.cfg)");
-		return NULL;
+		return nullptr;
 	}
 
 	AddPlugin(pl);
@@ -1008,7 +1004,7 @@ IPlugin *CPluginManager::LoadPlugin(const char *path, bool debug, PluginType typ
 		if (!RunSecondPass(pl)) {
 			ke::SafeStrcpy(error, maxlength, pl->GetErrorMsg());
 			UnloadPlugin(pl);
-			return NULL;
+			return nullptr;
 		}
 		pl->Call_OnAllPluginsLoaded();
 	}
@@ -1018,7 +1014,7 @@ IPlugin *CPluginManager::LoadPlugin(const char *path, bool debug, PluginType typ
 
 void CPluginManager::LoadAutoPlugin(const char *plugin)
 {
-	CPlugin *pl = NULL;
+	CPlugin *pl = nullptr;
 	LoadRes res;
 	if ((res=LoadPlugin(&pl, plugin, false, PluginType_MapUpdated)) == LoadRes_Failure)
 	{
@@ -1381,7 +1377,7 @@ bool CPluginManager::RunSecondPass(CPlugin *pPlugin)
 
 void CPluginManager::TryRefreshDependencies(CPlugin *pPlugin)
 {
-	assert(pPlugin->GetBaseContext() != NULL);
+	assert(pPlugin->GetBaseContext() != nullptr);
 
 	g_ShareSys.BindNativesToPlugin(pPlugin, false);
 
@@ -1526,7 +1522,7 @@ IPlugin *CPluginManager::FindPluginByContext(const sp_context_t *ctx)
 		return pPlugin;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 CPlugin *CPluginManager::GetPluginByCtx(const sp_context_t *ctx)
@@ -1564,20 +1560,20 @@ void CPluginManager::OnSourceModAllInitialized()
 	m_MyIdent = g_ShareSys.CreateCoreIdentity();
 
 	HandleAccess sec;
-	handlesys->InitAccessDefaults(NULL, &sec);
+	handlesys->InitAccessDefaults(nullptr, &sec);
 
 	sec.access[HandleAccess_Delete] = HANDLE_RESTRICT_IDENTITY;
 	sec.access[HandleAccess_Clone] = HANDLE_RESTRICT_IDENTITY;
 
-	g_PluginType = handlesys->CreateType("Plugin", this, 0, NULL, &sec, m_MyIdent, NULL);
+	g_PluginType = handlesys->CreateType("Plugin", this, 0, nullptr, &sec, m_MyIdent, nullptr);
 	g_PluginIdent = g_ShareSys.CreateIdentType("PLUGIN");
 
 	rootmenu->AddRootConsoleCommand3("plugins", "Manage Plugins", this);
 
-	g_ShareSys.AddInterface(NULL, GetOldAPI());
+	g_ShareSys.AddInterface(nullptr, GetOldAPI());
 
-	m_pOnLibraryAdded = forwardsys->CreateForward("OnLibraryAdded", ET_Ignore, 1, NULL, Param_String);
-	m_pOnLibraryRemoved = forwardsys->CreateForward("OnLibraryRemoved", ET_Ignore, 1, NULL, Param_String);
+	m_pOnLibraryAdded = forwardsys->CreateForward("OnLibraryAdded", ET_Ignore, 1, nullptr, Param_String);
+	m_pOnLibraryRemoved = forwardsys->CreateForward("OnLibraryRemoved", ET_Ignore, 1, nullptr, Param_String);
 }
 
 void CPluginManager::OnSourceModShutdown()
@@ -1633,12 +1629,12 @@ IPlugin *CPluginManager::PluginFromHandle(Handle_t handle, HandleError *err)
 
 	HandleSecurity sec;
 
-	sec.pOwner = NULL;
+	sec.pOwner = nullptr;
 	sec.pIdentity = m_MyIdent;
 
 	if ((_err=handlesys->ReadHandle(handle, g_PluginType, &sec, (void **)&pPlugin)) != HandleError_None)
 	{
-		pPlugin = NULL;
+		pPlugin = nullptr;
 	}
 
 	if (err)
@@ -1653,7 +1649,7 @@ CPlugin *CPluginManager::GetPluginByOrder(int num)
 {
 	if (num < 1 || num > (int)GetPluginCount())
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	PluginIter iter(m_plugins);
@@ -2155,7 +2151,7 @@ CPlugin *CPluginManager::GetPluginFromIdentity(IdentityToken_t *pToken)
 {
 	if (pToken->type != g_PluginIdent)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return (CPlugin *)(pToken->ptr);
@@ -2167,11 +2163,11 @@ void CPluginManager::OnLibraryAction(const char *lib, LibraryAction action)
 	{
 	case LibraryAction_Removed:
 		m_pOnLibraryRemoved->PushString(lib);
-		m_pOnLibraryRemoved->Execute(NULL);
+		m_pOnLibraryRemoved->Execute(nullptr);
 		break;
 	case LibraryAction_Added:
 		m_pOnLibraryAdded->PushString(lib);
-		m_pOnLibraryAdded->Execute(NULL);
+		m_pOnLibraryAdded->Execute(nullptr);
 		break;
 	}
 }
@@ -2228,7 +2224,7 @@ SMPlugin *CPluginManager::FindPluginByConsoleArg(const char *arg)
 		pl = GetPluginByOrder(id);
 		if (!pl)
 		{
-			return NULL;
+			return nullptr;
 		}
 	}
 	else
@@ -2238,7 +2234,7 @@ SMPlugin *CPluginManager::FindPluginByConsoleArg(const char *arg)
 		ke::SafeSprintf(pluginfile, sizeof(pluginfile), "%s%s", arg, ext);
 
 		if (!m_LoadLookup.retrieve(pluginfile, &pl))
-			return NULL;
+			return nullptr;
 	}
 
 	return pl;

@@ -32,24 +32,27 @@
 #include "sm_globals.h"
 #include <am-utility.h>
 
+using RenderFunc = void(const char *fmt, ...);
+
 class VProfTool
 	: public IProfilingTool,
 	  public SMGlobalClass
 {
 public:
+
 	VProfTool();
 
 	// IProfilingTool
 	const char *Name() override;
 	const char *Description() override;
 	bool Start() override;
-	void Stop(void (*render)(const char *fmt, ...)) override;
+	void Stop(RenderFunc) override;
 	void Dump() override;
 	bool IsActive() override;
 	bool IsAttached() override;
 	void EnterScope(const char *group, const char *name) override;
 	void LeaveScope() override;
-	void RenderHelp(void (*render)(const char *fmt, ...)) override;
+	void RenderHelp(RenderFunc) override;
 
 	// SMGlobalClass
 	void OnSourceModAllInitialized() override;

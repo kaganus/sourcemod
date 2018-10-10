@@ -85,7 +85,7 @@
 		return false;                                         \
 	}
 
-typedef List<Handle_t> PBHandleList;
+using PBHandleList =  List<Handle_t>;
 
 class SMProtobufMessage
 {

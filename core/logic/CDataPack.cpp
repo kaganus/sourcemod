@@ -44,23 +44,15 @@ CDataPack::~CDataPack()
 	Initialize();
 }
 
-static ke::Vector<ke::AutoPtr<CDataPack>> sDataPackCache;
-
 CDataPack *CDataPack::New()
 {
-  if (sDataPackCache.empty())
     return new CDataPack();
-
-  CDataPack *pack = sDataPackCache.back().take();
-  sDataPackCache.pop();
-  pack->Initialize();
-  return pack;
 }
 
 void
 CDataPack::Free(CDataPack *pack)
 {
-  sDataPackCache.append(static_cast<CDataPack *>(pack));
+	delete pack;
 }
 
 void CDataPack::Initialize()

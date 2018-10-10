@@ -53,6 +53,9 @@ using namespace SourceHook;
 struct CmdHook;
 struct ConCmdInfo;
 
+using CmdHookList = ke::InlineList<CmdHook>;
+using ConCmdList = List<ConCmdInfo *>;
+
 struct CommandGroup : public ke::Refcounted<CommandGroup>
 {
 	ke::LinkedList<CmdHook *> hooks;
@@ -93,8 +96,6 @@ struct CmdHook : public ke::InlineListNode<CmdHook>
 	ke::AutoPtr<AdminCmdInfo> admin;	/* admin requirements, if any */
 };
 
-typedef ke::InlineList<CmdHook> CmdHookList;
-
 struct ConCmdInfo
 {
 	ConCmdInfo()
@@ -111,8 +112,6 @@ struct ConCmdInfo
 	ke::RefPtr<CommandHook> sh_hook;   /**< SourceHook hook, if any. */
 	IPlugin *pPlugin; 				/**< Owning plugin handle. */
 };
-
-typedef List<ConCmdInfo *> ConCmdList;
 
 class ConCmdManager :
 	public SMGlobalClass,
@@ -165,7 +164,7 @@ public:
 		return m_CmdList;
 	}
 private:
-	typedef StringHashMap<ke::RefPtr<CommandGroup> > GroupMap;
+	using GroupMap = StringHashMap<ke::RefPtr<CommandGroup>>;
 
 	StringHashMap<ConCmdInfo *> m_Cmds; /* command lookup */
 	GroupMap m_CmdGrps;				/* command group map */

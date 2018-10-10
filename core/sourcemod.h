@@ -53,7 +53,6 @@ using namespace SourceHook;
 /**
  * @brief Implements SourceMod's global overall management, API, and logic
  */
-
 class SourceModBase : 
 	public ISourceMod,
 	public SMGlobalClass

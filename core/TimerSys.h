@@ -41,8 +41,8 @@
 using namespace SourceHook;
 using namespace SourceMod;
 
-typedef List<ITimer *> TimerList;
-typedef List<ITimer *>::iterator TimerIter;
+using TimerList = List<ITimer *>;
+using TimerIter = List<ITimer *>::iterator;
 
 class SourceMod::ITimer
 {
@@ -107,4 +107,3 @@ extern TimerSystem g_Timers;
 extern int g_TimeLeftMode;
 
 #endif //_INCLUDE_SOURCEMOD_CTIMERSYS_H_
-

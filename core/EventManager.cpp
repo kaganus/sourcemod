@@ -41,7 +41,7 @@ EventManager g_EventManager;
 SH_DECL_HOOK2(IGameEventManager2, FireEvent, SH_NOATTRIB, 0, bool, IGameEvent *, bool);
 
 const ParamType GAMEEVENT_PARAMS[] = {Param_Cell, Param_String, Param_Cell};
-typedef List<EventHook *> EventHookList;
+using EventHookList = List<EventHook *>;
 
 class EventForwardFilter : public IForwardFilter
 {
@@ -64,8 +64,7 @@ EventManager::EventManager() : m_EventType(0)
 EventManager::~EventManager()
 {
 	/* Free memory used by EventInfo structs if any */
-	CStack<EventInfo *>::iterator iter;
-	for (iter = m_FreeEvents.begin(); iter != m_FreeEvents.end(); iter++)
+	for (auto iter = m_FreeEvents.begin(); iter != m_FreeEvents.end(); iter++)
 	{
 		delete (*iter);
 	}
@@ -87,7 +86,7 @@ void EventManager::OnSourceModAllInitialized()
 	sec.access[HandleAccess_Clone] = HANDLE_RESTRICT_IDENTITY | HANDLE_RESTRICT_OWNER;
 
 	/* Create the 'GameEvent' handle type */
-	m_EventType = handlesys->CreateType("GameEvent", this, 0, NULL, &sec, g_pCoreIdent, NULL);
+	m_EventType = handlesys->CreateType("GameEvent", this, 0, nullptr, &sec, g_pCoreIdent, nullptr);
 }
 
 void EventManager::OnSourceModShutdown()
@@ -121,13 +120,12 @@ void EventManager::OnHandleDestroy(HandleType_t type, void *object)
 void EventManager::OnPluginUnloaded(IPlugin *plugin)
 {
 	EventHookList *pHookList;
-	EventHookList::iterator iter;
 	EventHook *pHook;
 
 	// If plugin has an event hook list...
 	if (plugin->GetProperty("EventHooks", reinterpret_cast<void **>(&pHookList), true))
 	{
-		for (iter = pHookList->begin(); iter != pHookList->end(); iter++)
+		for (auto iter = pHookList->begin(); iter != pHookList->end(); iter++)
 		{
 			pHook = (*iter);
 
@@ -199,12 +197,12 @@ EventHookError EventManager::HookEvent(const char *name, IPluginFunction *pFunct
 		if (mode == EventHookMode_Pre)
 		{
 			/* Create forward for a pre hook */
-			pHook->pPreHook = forwardsys->CreateForwardEx(NULL, ET_Hook, 3, GAMEEVENT_PARAMS);
+			pHook->pPreHook = forwardsys->CreateForwardEx(nullptr, ET_Hook, 3, GAMEEVENT_PARAMS);
 			/* Add to forward list */
 			pHook->pPreHook->AddFunction(pFunction);
 		} else {
 			/* Create forward for a post hook */
-			pHook->pPostHook = forwardsys->CreateForwardEx(NULL, ET_Ignore, 3, GAMEEVENT_PARAMS);
+			pHook->pPostHook = forwardsys->CreateForwardEx(nullptr, ET_Ignore, 3, GAMEEVENT_PARAMS);
 			/* Should we copy data from a pre hook to the post hook? */
 			pHook->postCopy = (mode == EventHookMode_Post);
 			/* Add to forward list */
@@ -231,7 +229,7 @@ EventHookError EventManager::HookEvent(const char *name, IPluginFunction *pFunct
 		/* Create pre hook forward if necessary */
 		if (!pHook->pPreHook)
 		{
-			pHook->pPreHook = forwardsys->CreateForwardEx(NULL, ET_Event, 3, GAMEEVENT_PARAMS);
+			pHook->pPreHook = forwardsys->CreateForwardEx(nullptr, ET_Event, 3, GAMEEVENT_PARAMS);
 		}
 
 		/* Add plugin function to forward list */
@@ -240,7 +238,7 @@ EventHookError EventManager::HookEvent(const char *name, IPluginFunction *pFunct
 		/* Create post hook forward if necessary */
 		if (!pHook->pPostHook)
 		{
-			pHook->pPostHook = forwardsys->CreateForwardEx(NULL, ET_Ignore, 3, GAMEEVENT_PARAMS);
+			pHook->pPostHook = forwardsys->CreateForwardEx(nullptr, ET_Ignore, 3, GAMEEVENT_PARAMS);
 		}
 
 		/* If postCopy is false, then we may want to set it to true */
@@ -279,7 +277,7 @@ EventHookError EventManager::UnhookEvent(const char *name, IPluginFunction *pFun
 	}
 
 	/* Remove function from forward's list */
-	if (*pEventForward == NULL || !(*pEventForward)->RemoveFunction(pFunction))
+	if (*pEventForward == nullptr || !(*pEventForward)->RemoveFunction(pFunction))
 	{
 		return EventHookErr_InvalidCallback;
 	}
@@ -288,7 +286,7 @@ EventHookError EventManager::UnhookEvent(const char *name, IPluginFunction *pFun
 	if ((*pEventForward)->GetFunctionCount() == 0)
 	{
 		forwardsys->ReleaseForward(*pEventForward);
-		*pEventForward = NULL;
+		*pEventForward = nullptr;
 	}
 
 	/* Decrement reference count */
@@ -326,28 +324,27 @@ EventHookError EventManager::UnhookEvent(const char *name, IPluginFunction *pFun
 
 EventInfo *EventManager::CreateEvent(IPluginContext *pContext, const char *name, bool force)
 {
-	EventInfo *pInfo;
 	IGameEvent *pEvent = gameevents->CreateEvent(name, force);
-
-	if (pEvent)
+	if (!pEvent)
 	{
-		if (m_FreeEvents.empty())
-		{
-			pInfo = new EventInfo();
-		} else {
-			pInfo = m_FreeEvents.front();
-			m_FreeEvents.pop();
-		}
-
-
-		pInfo->pEvent = pEvent;
-		pInfo->pOwner = pContext->GetIdentity();
-		pInfo->bDontBroadcast = false;
-
-		return pInfo;
+		return nullptr;
+	}
+	
+	EventInfo *pInfo;
+	if (m_FreeEvents.empty())
+	{
+		pInfo = new EventInfo();
+	} else {
+		pInfo = m_FreeEvents.front();
+		m_FreeEvents.pop();
 	}
 
-	return NULL;
+
+	pInfo->pEvent = pEvent;
+	pInfo->pOwner = pContext->GetIdentity();
+	pInfo->bDontBroadcast = false;
+
+	return pInfo;
 }
 
 void EventManager::FireEvent(EventInfo *pInfo, bool bDontBroadcast)
@@ -356,7 +353,7 @@ void EventManager::FireEvent(EventInfo *pInfo, bool bDontBroadcast)
 	gameevents->FireEvent(pInfo->pEvent, bDontBroadcast);
 
 	/* IGameEvent is free at this point, so no one owns this */
-	pInfo->pOwner = NULL;
+	pInfo->pOwner = nullptr;
 
 	/* Add EventInfo struct to free event stack */
 	m_FreeEvents.push(pInfo);
@@ -375,7 +372,7 @@ void EventManager::CancelCreatedEvent(EventInfo *pInfo)
 	gameevents->FreeEvent(pInfo->pEvent);
 
 	/* IGameEvent is free at this point, so no one owns this */
-	pInfo->pOwner = NULL;
+	pInfo->pOwner = nullptr;
 
 	/* Add EventInfo struct to free event stack */
 	m_FreeEvents.push(pInfo);
@@ -386,18 +383,16 @@ bool EventManager::OnFireEvent(IGameEvent *pEvent, bool bDontBroadcast)
 {
 	EventHook *pHook;
 	IChangeableForward *pForward;
-	const char *name;
 	cell_t res = Pl_Continue;
 	bool broadcast = bDontBroadcast;
 
-	/* The engine accepts NULL without crashing, so to prevent a crash in SM we ignore these */
+	/* The engine accepts nullptr without crashing, so to prevent a crash in SM we ignore these */
 	if (!pEvent)
 	{
 		RETURN_META_VALUE(MRES_IGNORED, false);
 	}
 
-	name = pEvent->GetName();
-	
+	const char *name = pEvent->GetName();
 	if (m_EventHooks.retrieve(name, &pHook))
 	{
 		/* Push the event onto the event stack.  The reference count is increased to make sure 
@@ -410,9 +405,9 @@ bool EventManager::OnFireEvent(IGameEvent *pEvent, bool bDontBroadcast)
 
 		if (pForward)
 		{
-			EventInfo info(pEvent, NULL);
-			HandleSecurity sec(NULL, g_pCoreIdent);
-			Handle_t hndl = handlesys->CreateHandle(m_EventType, &info, NULL, g_pCoreIdent, NULL);
+			EventInfo info(pEvent, nullptr);
+			HandleSecurity sec(nullptr, g_pCoreIdent);
+			Handle_t hndl = handlesys->CreateHandle(m_EventType, &info, nullptr, g_pCoreIdent, nullptr);
 
 			info.bDontBroadcast = bDontBroadcast;
 
@@ -441,7 +436,7 @@ bool EventManager::OnFireEvent(IGameEvent *pEvent, bool bDontBroadcast)
 	}
 	else
 	{
-		m_EventStack.push(NULL);
+		m_EventStack.push(nullptr);
 	}
 
 	if (broadcast != bDontBroadcast)
@@ -458,7 +453,7 @@ bool EventManager::OnFireEvent_Post(IGameEvent *pEvent, bool bDontBroadcast)
 	IChangeableForward *pForward;
 	Handle_t hndl = 0;
 
-	/* The engine accepts NULL without crashing, so to prevent a crash in SM we ignore these */
+	/* The engine accepts nullptr without crashing, so to prevent a crash in SM we ignore these */
 	if (!pEvent)
 	{
 		RETURN_META_VALUE(MRES_IGNORED, false);
@@ -466,7 +461,7 @@ bool EventManager::OnFireEvent_Post(IGameEvent *pEvent, bool bDontBroadcast)
 
 	pHook = m_EventStack.front();
 
-	if (pHook != NULL)
+	if (pHook)
 	{
 		pForward = pHook->pPostHook;
 
@@ -476,8 +471,8 @@ bool EventManager::OnFireEvent_Post(IGameEvent *pEvent, bool bDontBroadcast)
 			{
 				info.bDontBroadcast = bDontBroadcast;
 				info.pEvent = m_EventCopies.front();
-				info.pOwner = NULL;
-				hndl = handlesys->CreateHandle(m_EventType, &info, NULL, g_pCoreIdent, NULL);
+				info.pOwner = nullptr;
+				hndl = handlesys->CreateHandle(m_EventType, &info, nullptr, g_pCoreIdent, nullptr);
 
 				pForward->PushCell(hndl);
 			} else {
@@ -486,12 +481,12 @@ bool EventManager::OnFireEvent_Post(IGameEvent *pEvent, bool bDontBroadcast)
 
 			pForward->PushString(pHook->name.chars());
 			pForward->PushCell(bDontBroadcast);
-			pForward->Execute(NULL);
+			pForward->Execute(nullptr);
 
 			if (pHook->postCopy)
 			{
 				/* Free handle */
-				HandleSecurity sec(NULL, g_pCoreIdent);
+				HandleSecurity sec(nullptr, g_pCoreIdent);
 				handlesys->FreeHandle(hndl, &sec);
 
 				/* Free event structure */
@@ -503,8 +498,8 @@ bool EventManager::OnFireEvent_Post(IGameEvent *pEvent, bool bDontBroadcast)
 		/* Decrement reference count, check if a delayed delete is needed */
 		if (--pHook->refCount == 0)
 		{
-			assert(pHook->pPostHook == NULL);
-			assert(pHook->pPreHook == NULL);
+			assert(pHook->pPostHook == nullptr);
+			assert(pHook->pPreHook == nullptr);
 			m_EventHooks.remove(pHook->name.chars());
 			delete pHook;
 		}

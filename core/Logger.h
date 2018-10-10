@@ -36,8 +36,6 @@
 #include <sh_string.h>
 #include "sm_globals.h"
 
-using namespace SourceHook;
-
 class LoggerCore : public SMGlobalClass
 {
 public: //SMGlobalClass

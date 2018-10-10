@@ -306,7 +306,7 @@ ITimer *TimerSystem::CreateTimer(ITimedEvent *pCallbacks, float fInterval, void 
 	if (flags & TIMER_FLAG_REPEAT)
 	{
 		m_LoopTimers.push_back(pTimer);
-		goto return_timer;
+		return pTimer;
 	}
 
 	if (m_SingleTimers.size() >= 1)
@@ -314,7 +314,8 @@ ITimer *TimerSystem::CreateTimer(ITimedEvent *pCallbacks, float fInterval, void 
 		iter = --m_SingleTimers.end();
 		if ((*iter)->m_ToExec <= to_exec)
 		{
-			goto normal_insert_end;
+			m_SingleTimers.push_back(pTimer);
+			return pTimer;
 		}
 	}
 
@@ -323,27 +324,23 @@ ITimer *TimerSystem::CreateTimer(ITimedEvent *pCallbacks, float fInterval, void 
 		if ((*iter)->m_ToExec >= to_exec)
 		{
 			m_SingleTimers.insert(iter, pTimer);
-			goto return_timer;
+			return pTimer;
 		}
 	}
 
-normal_insert_end:
 	m_SingleTimers.push_back(pTimer);
-
-return_timer:
 	return pTimer;
 }
 
 void TimerSystem::FireTimerOnce(ITimer *pTimer, bool delayExec)
 {
-	ResultType res;
-
 	if (pTimer->m_InExec)
 	{
 		return;
 	}
-
 	pTimer->m_InExec = true;
+	
+	ResultType res;
 	res = pTimer->m_Listener->OnTimer(pTimer, pTimer->m_pData);
 
 	if (!(pTimer->m_Flags & TIMER_FLAG_REPEAT))
@@ -395,9 +392,9 @@ void TimerSystem::KillTimer(ITimer *pTimer)
 	m_FreeTimers.push(pTimer);
 }
 
-CStack<ITimer *> s_tokill;
 void TimerSystem::RemoveMapChangeTimers()
 {
+	static CStack<ITimer *> s_tokill;
 	ITimer *pTimer;
 	TimerIter iter;
 
@@ -484,4 +481,3 @@ bool TimerSystem::GetMapTimeLeft(float *time_left)
 
 	return true;
 }
-

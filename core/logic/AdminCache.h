@@ -42,6 +42,9 @@
 #include <sm_stringhashmap.h>
 #include <sm_namehashset.h>
 
+#include <am-vector.h>
+#include <am-autoptr.h>
+
 using namespace SourceHook;
 
 #define GRP_MAGIC_SET		0xDEADFADE
@@ -215,7 +218,7 @@ public:
 	int m_FreeGroupList;
 	StringHashMap<GroupId> m_Groups;
 	List<IAdminListener *> m_hooks;
-	List<AuthMethod *> m_AuthMethods;
+	ke::Vector<ke::AutoPtr<AuthMethod>> m_AuthMethods;
 	NameHashSet<AuthMethod *> m_AuthTables;
 	IForward *m_pCacheFwd;
 	int m_FirstUser;

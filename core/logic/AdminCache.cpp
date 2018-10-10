@@ -73,7 +73,7 @@ public:
 		if (!Parse())
 		{
 			memcpy(g_FlagLetters, g_DefaultFlags, sizeof(AdminFlag) * 26);
-			for (unsigned int i=0; i<20; i++)
+			for (size_t i = 0; i < 20; i++)
 			{
 				g_FlagCharSet[i] = true;
 			}
@@ -97,7 +97,7 @@ private:
 			{
 				err_string = "Unknown error";
 			}
-			ParseError(NULL, "Error %d (%s)", error, err_string);
+			ParseError(nullptr, "Error %d (%s)", error, err_string);
 			return false;
 		}
 
@@ -221,7 +221,7 @@ AdminCache::AdminCache()
 	m_pMemory = m_pStrings->GetMemTable();
 	m_FreeGroupList = m_FirstGroup = m_LastGroup = INVALID_GROUP_ID;
 	m_FreeUserList = m_FirstUser = m_LastUser = INVALID_ADMIN_ID;
-	m_pCacheFwd = NULL;
+	m_pCacheFwd = nullptr;
 	m_FirstGroup = -1;
 	m_InvalidatingAdmins = false;
 	m_destroying = false;
@@ -233,13 +233,7 @@ AdminCache::~AdminCache()
 	DumpAdminCache(AdminCache_Overrides, false);
 	DumpAdminCache(AdminCache_Groups, false);
 
-	List<AuthMethod *>::iterator iter;
-	for (iter=m_AuthMethods.begin();
-		 iter!=m_AuthMethods.end();
-		 iter++)
-	{
-		delete *iter;
-	}
+	m_AuthMethods.clear();
 
 	delete m_pStrings;
 }
@@ -290,8 +284,8 @@ void AdminCache::OnSourceModStartup(bool late)
 
 void AdminCache::OnSourceModAllInitialized()
 {
-	m_pCacheFwd = forwardsys->CreateForward("OnRebuildAdminCache", ET_Ignore, 1, NULL, Param_Cell);
-	sharesys->AddInterface(NULL, this);
+	m_pCacheFwd = forwardsys->CreateForward("OnRebuildAdminCache", ET_Ignore, 1, nullptr, Param_Cell);
+	sharesys->AddInterface(nullptr, this);
 }
 
 void AdminCache::OnSourceModLevelChange(const char *mapName)
@@ -316,7 +310,7 @@ void AdminCache::OnSourceModLevelChange(const char *mapName)
 void AdminCache::OnSourceModShutdown()
 {
 	forwardsys->ReleaseForward(m_pCacheFwd);
-	m_pCacheFwd = NULL;
+	m_pCacheFwd = nullptr;
 }
 
 void AdminCache::OnSourceModPluginsLoaded()
@@ -472,8 +466,8 @@ GroupId AdminCache::AddGroup(const char *group_name)
 	pGroup->immune_table = -1;
 	pGroup->magic = GRP_MAGIC_SET;
 	pGroup->next_grp = INVALID_GROUP_ID;
-	pGroup->pCmdGrpTable = NULL;
-	pGroup->pCmdTable = NULL;
+	pGroup->pCmdGrpTable = nullptr;
+	pGroup->pCmdTable = nullptr;
 	pGroup->addflags = 0;
 
 	if (m_FirstGroup == INVALID_GROUP_ID)
@@ -566,7 +560,7 @@ const char *AdminCache::GetGroupName(GroupId gid)
 	AdminGroup *pGroup = (AdminGroup *)m_pMemory->GetAddress(gid);
 	if (!pGroup || pGroup->magic != GRP_MAGIC_SET)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return m_pStrings->GetString(pGroup->nameidx);
@@ -718,11 +712,11 @@ void AdminCache::AddGroupCommandOverride(GroupId id, const char *name, OverrideT
 	OverrideMap *map;
 	if (type == Override_Command)
 	{
-		if (pGroup->pCmdTable == NULL)
+		if (pGroup->pCmdTable == nullptr)
 			pGroup->pCmdTable = new OverrideMap();
 		map = pGroup->pCmdTable;
 	} else if (type == Override_CommandGroup) {
-		if (pGroup->pCmdGrpTable == NULL)
+		if (pGroup->pCmdGrpTable == nullptr)
 			pGroup->pCmdGrpTable = new OverrideMap();
 		map = pGroup->pCmdGrpTable;
 	} else {
@@ -743,11 +737,11 @@ bool AdminCache::GetGroupCommandOverride(GroupId id, const char *name, OverrideT
 	OverrideMap *map;
 	if (type == Override_Command)
 	{
-		if (pGroup->pCmdTable == NULL)
+		if (pGroup->pCmdTable == nullptr)
 			return false;
 		map = pGroup->pCmdTable;
 	} else if (type == Override_CommandGroup) {
-		if (pGroup->pCmdGrpTable == NULL)
+		if (pGroup->pCmdGrpTable == nullptr)
 			return false;
 		map = pGroup->pCmdGrpTable;
 	} else {
@@ -759,18 +753,14 @@ bool AdminCache::GetGroupCommandOverride(GroupId id, const char *name, OverrideT
 
 AuthMethod *AdminCache::GetMethodByIndex(unsigned int index)
 {
-	List<AuthMethod *>::iterator iter;
-	for (iter=m_AuthMethods.begin();
-		 iter!=m_AuthMethods.end();
-		 iter++)
+	if (index < m_AuthMethods.length())
 	{
-		if (index-- == 0)
-		{
-			return *iter;
-		}
+		return m_AuthMethods[index].get();
 	}
-
-	return NULL;
+	else
+	{
+		return nullptr;
+	}
 }
 
 bool AdminCache::InvalidateAdmin(AdminId id)
@@ -865,9 +855,9 @@ void AdminCache::InvalidateGroup(GroupId id)
 
 	/* Free any used memory */
 	delete pGroup->pCmdGrpTable;
-	pGroup->pCmdGrpTable = NULL;
+	pGroup->pCmdGrpTable = nullptr;
 	delete pGroup->pCmdTable;
-	pGroup->pCmdTable = NULL;
+	pGroup->pCmdTable = nullptr;
 
 	/* Link into the free list */
 	pGroup->magic = GRP_MAGIC_UNSET;
@@ -957,8 +947,8 @@ void AdminCache::RegisterAuthIdentType(const char *name)
 	if (m_AuthTables.contains(name))
 		return;
 
-	AuthMethod *method = new AuthMethod(name);
-	m_AuthMethods.push_back(method);
+	ke::AutoPtr<AuthMethod> method(new AuthMethod(name));
+	m_AuthMethods.append(ke::Move(method));
 	m_AuthTables.insert(name, method);
 }
 
@@ -974,12 +964,9 @@ void AdminCache::InvalidateAdminCache(bool unlink_admins)
 		}
 	}
 	/* Wipe the identity cache first */
-	List<AuthMethod *>::iterator iter;
-	for (iter=m_AuthMethods.begin();
-		 iter!=m_AuthMethods.end();
-		 iter++)
+	for (auto &item : m_AuthMethods)
 	{
-		(*iter)->identities.clear();
+		item->identities.clear();
 	}
 	
 	if (unlink_admins)
@@ -1050,7 +1037,7 @@ const char *AdminCache::GetAdminName(AdminId id)
 	AdminUser *pUser = (AdminUser *)m_pMemory->GetAddress(id);
 	if (!pUser || pUser->magic != USR_MAGIC_SET)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return m_pStrings->GetString(pUser->nameidx);
@@ -1058,17 +1045,16 @@ const char *AdminCache::GetAdminName(AdminId id)
 
 bool AdminCache::GetMethodIndex(const char *name, unsigned int *_index)
 {
-	List<AuthMethod *>::iterator iter;
 	unsigned int index = 0;
-	for (iter=m_AuthMethods.begin();
-		 iter!=m_AuthMethods.end();
-		 iter++,index++)
+	for (auto &item : m_AuthMethods)
 	{
-		if ((*iter)->name.compare(name) == 0)
+		if (item->name.compare(name) == 0)
 		{
 			*_index = index;
 			return true;
 		}
+		
+		index++;
 	}
 
 	return false;
@@ -1366,7 +1352,7 @@ bool AdminCache::AdminInheritGroup(AdminId id, GroupId gid)
 bool AdminCache::IsValidAdmin(AdminId id)
 {
 	AdminUser *pUser = (AdminUser *)m_pMemory->GetAddress(id);
-	return (pUser != NULL && pUser->magic == USR_MAGIC_SET);
+	return (pUser != nullptr && pUser->magic == USR_MAGIC_SET);
 }
 
 unsigned int AdminCache::GetAdminGroupCount(AdminId id)
@@ -1405,7 +1391,7 @@ const char *AdminCache::GetAdminPassword(AdminId id)
 	AdminUser *pUser = (AdminUser *)m_pMemory->GetAddress(id);
 	if (!pUser || pUser->magic != USR_MAGIC_SET)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return m_pStrings->GetString(pUser->password);
@@ -1794,7 +1780,7 @@ bool AdminCache::DumpCache(const char *filename)
 	AdminGroup *pGroup;
 	
 	FILE *fp;
-	if ((fp = fopen(filename, "wt")) == NULL)
+	if ((fp = fopen(filename, "wt")) == nullptr)
 	{
 		return false;
 	}
@@ -1804,7 +1790,7 @@ bool AdminCache::DumpCache(const char *filename)
 	num = 0;
 	gid = m_FirstGroup;
 	while (gid != INVALID_GROUP_ID
-			&& (pGroup = GetGroup(gid)) != NULL)
+			&& (pGroup = GetGroup(gid)) != nullptr)
 	{
 		num++;
 		FillFlagString(pGroup->addflags, flagstr, sizeof(flagstr));
@@ -1815,14 +1801,14 @@ bool AdminCache::DumpCache(const char *filename)
 		fprintf(fp, "\t\t\"immunity\"\t\t\"%d\"\n", pGroup->immunity_level);
 		
 		if (pGroup->immune_table != -1
-			&& (itable = (int *)m_pMemory->GetAddress(pGroup->immune_table)) != NULL)
+			&& (itable = (int *)m_pMemory->GetAddress(pGroup->immune_table)) != nullptr)
 		{
 			AdminGroup *pAltGroup;
 			const char *gname, *mod;
 
 			for (int i = 1; i <= itable[0]; i++)
 			{
-				if ((pAltGroup = GetGroup(itable[i])) == NULL)
+				if ((pAltGroup = GetGroup(itable[i])) == nullptr)
 				{
 					/* Assume the rest of the table is corrupt */
 					break;
@@ -1841,12 +1827,12 @@ bool AdminCache::DumpCache(const char *filename)
 		}
 
 		fprintf(fp, "\n\t\t\"Overrides\"\n\t\t{\n");
-		if (pGroup->pCmdGrpTable != NULL)
+		if (pGroup->pCmdGrpTable != nullptr)
 		{
 			for (OverrideMap::iterator iter = pGroup->pCmdTable->iter(); !iter.empty(); iter.next())
 				iterator_group_grp_override(fp, iter->key.chars(), iter->value);
 		}
-		if (pGroup->pCmdTable != NULL)
+		if (pGroup->pCmdTable != nullptr)
 		{
 			for (OverrideMap::iterator iter = pGroup->pCmdTable->iter(); !iter.empty(); iter.next())
 				iterator_group_basic_override(fp, iter->key.chars(), iter->value);
@@ -1867,7 +1853,7 @@ bool AdminCache::DumpCache(const char *filename)
 	num = 0;
 	aid = m_FirstUser;
 	while (aid != INVALID_ADMIN_ID
-			&& (pAdmin = GetUser(aid)) != NULL)
+			&& (pAdmin = GetUser(aid)) != nullptr)
 	{
 		num++;
 		FillFlagString(pAdmin->flags, flagstr, sizeof(flagstr));
@@ -1897,13 +1883,13 @@ bool AdminCache::DumpCache(const char *filename)
 
 		if (pAdmin->grp_count != 0 
 			&& pAdmin->grp_table != -1 
-			&& (itable = (int *)m_pMemory->GetAddress(pAdmin->grp_table)) != NULL)
+			&& (itable = (int *)m_pMemory->GetAddress(pAdmin->grp_table)) != nullptr)
 		{
 			unsigned int i;
 
 			for (i = 0; i < pAdmin->grp_count; i++)
 			{
-				if ((pGroup = GetGroup(itable[i])) == NULL)
+				if ((pGroup = GetGroup(itable[i])) == nullptr)
 				{
 					/* Assume the rest of the table is corrupt */
 					break;
@@ -1941,7 +1927,7 @@ AdminGroup *AdminCache::GetGroup(GroupId gid)
 	pGroup = (AdminGroup *)m_pMemory->GetAddress(gid);
 	if (!pGroup || pGroup->magic != GRP_MAGIC_SET)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return pGroup;
@@ -1954,7 +1940,7 @@ AdminUser *AdminCache::GetUser(AdminId aid)
 	pAdmin = (AdminUser *)m_pMemory->GetAddress(aid);
 	if (!pAdmin || pAdmin->magic != USR_MAGIC_SET)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return pAdmin;
@@ -1962,18 +1948,15 @@ AdminUser *AdminCache::GetUser(AdminId aid)
 
 const char *AdminCache::GetMethodName(unsigned int index)
 {
-	List<AuthMethod *>::iterator iter;
-	for (iter=m_AuthMethods.begin();
-		iter!=m_AuthMethods.end();
-		iter++)
+	for (auto &item : m_AuthMethods)
 	{
 		if (index-- == 0)
 		{
-			return (*iter)->name.c_str();
+			return item->name.c_str();
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 const char *AdminCache::GetString(int idx)
@@ -2017,7 +2000,7 @@ bool AdminCache::CheckClientCommandAccess(int client, const char *cmd, FlagBits 
 
 	IGamePlayer *player = playerhelpers->GetGamePlayer(client);
 	if (!player
-		|| player->GetEdict() == NULL
+		|| player->GetEdict() == nullptr
 		|| player->IsFakeClient())
 	{
 		return false;
@@ -2047,7 +2030,7 @@ bool AdminCache::CheckAdminCommandAccess(AdminId adm, const char *cmd, FlagBits 
 		bool override = false;
 		for (unsigned int i = 0; i<groups; i++)
 		{
-			gid = GetAdminGroup(adm, i, NULL);
+			gid = GetAdminGroup(adm, i, nullptr);
 			/* First get group-level override */
 			override = GetGroupCommandOverride(gid, cmd, Override_CommandGroup, &rule);
 			/* Now get the specific command override */

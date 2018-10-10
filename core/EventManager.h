@@ -62,8 +62,8 @@ struct EventHook
 {
 	EventHook()
 	{
-		pPreHook = NULL;
-		pPostHook = NULL;
+		pPreHook = nullptr;
+		pPostHook = nullptr;
 		postCopy = false;
 		refCount = 0;
 	}

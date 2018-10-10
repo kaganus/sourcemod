@@ -34,7 +34,9 @@
 #include "ISourceMod.h"
 #include "ReentrantList.h"
 
-typedef ReentrantList<IPluginFunction *>::iterator FuncIter;
+class CForward;
+using FuncIter = ReentrantList<IPluginFunction *>::iterator;
+using ForwardIter = ReentrantList<CForward *>::iterator;
 
 /* :TODO: a global name max define for sourcepawn, should mirror compiler's sNAMEMAX */
 #define FORWARDS_NAME_MAX		64
@@ -127,8 +129,6 @@ public: //SMGlobalClass
 private:
 	ReentrantList<CForward *> m_managed;
 	ReentrantList<CForward *> m_unmanaged;
-
-	typedef ReentrantList<CForward *>::iterator ForwardIter;
 };
 
 extern CForwardManager g_Forwards;

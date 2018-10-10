@@ -39,8 +39,7 @@
 #include <sourcemod_version.h>
 #include <bridge/include/IProviderCallbacks.h>
 
-bool g_in_game_log_hook = false;
-
+static bool g_in_game_log_hook = false;
 static LoggerCore g_LoggerCore;
 
 SH_DECL_HOOK1_void(IVEngineServer, LogPrint, SH_NOATTRIB, false, const char *);

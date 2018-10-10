@@ -106,7 +106,6 @@ void RunFrameHooks(bool simulating)
 	g_SourceMod.ProcessGameFrameHooks(simulating);
 
 	float curtime = *g_pUniversalTime;
-
 	if (curtime - g_LastMenuTime >= 1.0f)
 	{
 		g_ValveMenuStyle.ProcessWatchList();

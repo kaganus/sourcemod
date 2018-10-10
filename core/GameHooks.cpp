@@ -123,14 +123,12 @@ void GameHooks::OnQueryCvarValueFinished(QueryCvarCookie_t cookie, edict_t *pPla
 }
 #endif
 
-ke::RefPtr<CommandHook>
-GameHooks::AddCommandHook(ConCommand *cmd, const CommandHook::Callback &callback)
+ke::RefPtr<CommandHook> GameHooks::AddCommandHook(ConCommand *cmd, const CommandHook::Callback &callback)
 {
 	return new CommandHook(cmd, callback, false);
 }
 
-ke::RefPtr<CommandHook>
-GameHooks::AddPostCommandHook(ConCommand *cmd, const CommandHook::Callback &callback)
+ke::RefPtr<CommandHook> GameHooks::AddPostCommandHook(ConCommand *cmd, const CommandHook::Callback &callback)
 {
 	return new CommandHook(cmd, callback, true);
 }

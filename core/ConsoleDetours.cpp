@@ -144,6 +144,7 @@ class GenericCommandHooker : public IConCommandLinkListener
 			vtables[i].refcount = 0;
 		for (ConCommandBaseIterator iter; iter.IsValid(); iter.Next())
 			MakeHookable(iter.Get());
+		
 		CVector<HackInfo>::iterator iter = vtables.begin();
 		while (iter != vtables.end())
 		{

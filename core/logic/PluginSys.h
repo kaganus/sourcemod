@@ -129,7 +129,7 @@ public:
 		bool required;
 	};
 
-	typedef ke::Lambda<bool(const sp_pubvar_t *, const ExtVar& ext)> ExtVarCallback;
+	using ExtVarCallback = ke::Lambda<bool(const sp_pubvar_t *, const ExtVar& ext)>;
 	bool ForEachExtVar(const ExtVarCallback& callback);
 
 	void ForEachLibrary(ke::Lambda<void(const char *)> callback);
@@ -272,7 +272,7 @@ private:
 	IPluginContext *m_pContext;
 	sp_pubvar_t *m_MaxClientsVar;
 	StringHashMap<void *> m_Props;
-	CVector<AutoConfig *> m_configs;
+	ke::Vector<ke::UniquePtr<AutoConfig>> m_configs;
 	List<String> m_Libraries;
 	bool m_bGotAllLoaded;
 	int m_FileVersion;
@@ -473,10 +473,9 @@ private:
 private:
 	ReentrantList<IPluginsListener *> m_listeners;
 	ReentrantList<CPlugin *> m_plugins;
-	ke::LinkedList<CPluginIterator *> m_iterators;
 
-	typedef decltype(m_listeners)::iterator ListenerIter;
-	typedef decltype(m_plugins)::iterator PluginIter;
+	using ListenerIter = decltype(m_listeners)::iterator;
+	using PluginIter = decltype(m_plugins)::iterator;
 
 	struct CPluginPolicy
 	{
@@ -510,10 +509,6 @@ private:
 
 	bool m_AllPluginsLoaded;
 	IdentityToken_t *m_MyIdent;
-
-	/* Dynamic native stuff */
-	List<FakeNative *> m_Natives;
-
 	bool m_LoadingLocked;
 	
 	// Config

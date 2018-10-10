@@ -47,54 +47,46 @@ VProfTool::OnSourceModAllInitialized()
 	logicore.RegisterProfiler(this);
 }
 
-const char *
-VProfTool::Name()
+const char *VProfTool::Name()
 {
 	return "vprof";
 }
 
-const char *
-VProfTool::Description()
+const char *VProfTool::Description()
 {
 	return "Valve built-in profiler";
 }
 
-bool
-VProfTool::Start()
+bool VProfTool::Start()
 {
 	g_VProfCurrentProfile.Start();
 	return IsActive();
 }
 
-void
-VProfTool::Stop(void (*render)(const char *fmt, ...))
+void VProfTool::Stop(RenderFunc *render)
 {
 	g_VProfCurrentProfile.Stop();
 	RenderHelp(render);
 }
 
-void
-VProfTool::Dump()
+void VProfTool::Dump()
 {
 	g_VProfCurrentProfile.Pause();
 	g_VProfCurrentProfile.OutputReport(VPRT_FULL);
 	g_VProfCurrentProfile.Resume();
 }
 
-bool
-VProfTool::IsActive()
+bool VProfTool::IsActive()
 {
 	return g_VProfCurrentProfile.IsEnabled();
 }
 
-bool
-VProfTool::IsAttached()
+bool VProfTool::IsAttached()
 {
 	return true;
 }
 
-void
-VProfTool::EnterScope(const char *group, const char *name)
+void VProfTool::EnterScope(const char *group, const char *name)
 {
 	if (IsActive()) {
 		if (!group)
@@ -103,15 +95,13 @@ VProfTool::EnterScope(const char *group, const char *name)
 	}
 }
 
-void 
-VProfTool::LeaveScope()
+void VProfTool::LeaveScope()
 {
 	if (IsActive())
 		g_VProfCurrentProfile.ExitScope();
 }
 
-void
-VProfTool::RenderHelp(void (*render)(const char *fmt, ...))
+void VProfTool::RenderHelp(RenderFunc *render)
 {
 	render("Use 'sm prof dump vprof' or one of the vprof_generate_report commands in your console to analyze a profile session.");
 }

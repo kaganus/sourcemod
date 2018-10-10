@@ -79,7 +79,7 @@ const char *SafeFrameIterator::FunctionName() const
 {
 	if (this->Done())
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return frames[current].FunctionName.chars();
@@ -89,7 +89,7 @@ const char *SafeFrameIterator::FilePath() const
 {
 	if (this->Done())
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	return frames[current].FilePath.chars();

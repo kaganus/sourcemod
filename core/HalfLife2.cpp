@@ -47,8 +47,7 @@
 #include <cstrike15_usermessages.pb.h>
 #endif
 
-
-typedef ICommandLine *(*FakeGetCommandLine)();
+using FakeGetCommandLine = ICommandLine*(*)();
 
 #define TIER0_NAME			SOURCE_BIN_PREFIX "tier0" SOURCE_BIN_SUFFIX SOURCE_BIN_EXT
 #define VSTDLIB_NAME		SOURCE_BIN_PREFIX "vstdlib" SOURCE_BIN_SUFFIX SOURCE_BIN_EXT
@@ -1200,7 +1199,7 @@ bool IsWindowsReservedDeviceName(const char *pMapname)
 	};
 	
 	size_t reservedCount = sizeof(reservedDeviceNames) / sizeof(reservedDeviceNames[0]);
-	for (int i = 0; i < reservedCount; ++i)
+	for (size_t i = 0; i < reservedCount; ++i)
 	{
 		if (CheckReservedFilename(pMapname, reservedDeviceNames[i]))
 		{
