@@ -41,6 +41,7 @@
 #include <bridge/include/ILogger.h>
 
 NextMapManager g_NextMap;
+IForward *OnChangeLevel = NULL;
 
 #if SOURCE_ENGINE != SE_DARKMESSIAH
 SH_DECL_HOOK2_void(IVEngineServer, ChangeLevel, SH_NOATTRIB, 0, const char *, const char *);
@@ -55,11 +56,13 @@ SH_DECL_EXTERN0_void(ConCommand, Dispatch, SH_NOATTRIB, false);
 #endif
 
 ConCommand *changeLevelCmd = NULL;
+ConCommand *mapCmd = NULL;
 
 ConVar sm_nextmap("sm_nextmap", "", FCVAR_NOTIFY);
 ConVar sm_maphistory_size("sm_maphistory_size", "20");
 
 bool g_forcedChange = false;
+bool g_forwardCalled = false;
 
 void NextMapManager::OnSourceModAllInitialized_Post()
 {
@@ -75,6 +78,15 @@ void NextMapManager::OnSourceModAllInitialized_Post()
 		SH_ADD_HOOK(ConCommand, Dispatch, pCmd, SH_STATIC(CmdChangeLevelCallback), false);
 		changeLevelCmd = pCmd;
 	}
+
+	pCmd = FindCommand("map");
+	if (pCmd != NULL)
+	{
+		SH_ADD_HOOK(ConCommand, Dispatch, pCmd, SH_STATIC(CmdChangeLevelCallback), false);
+		mapCmd = pCmd;
+	}
+
+	OnChangeLevel = forwardsys->CreateForward("OnChangeLevel", ET_Ignore, 1, NULL, Param_String);
 }
 
 void NextMapManager::OnSourceModShutdown()
@@ -90,6 +102,11 @@ void NextMapManager::OnSourceModShutdown()
 		SH_REMOVE_HOOK(ConCommand, Dispatch, changeLevelCmd, SH_STATIC(CmdChangeLevelCallback), false);
 	}
 
+	if (mapCmd != NULL)
+	{
+		SH_REMOVE_HOOK(ConCommand, Dispatch, mapCmd, SH_STATIC(CmdChangeLevelCallback), false);
+	}
+
 	SourceHook::List<MapChangeData *>::iterator iter;
 	iter = m_mapHistory.begin();
 
@@ -98,6 +115,8 @@ void NextMapManager::OnSourceModShutdown()
 		delete (MapChangeData *)*iter;
 		iter = m_mapHistory.erase(iter);
 	}
+
+	forwardsys->ReleaseForward(OnChangeLevel);
 }
 
 const char *NextMapManager::GetNextMap()
@@ -125,6 +144,10 @@ void NextMapManager::HookChangeLevel(const char *map, const char *unknown, const
 {
 	if (g_forcedChange)
 	{
+		OnChangeLevel->PushString(map);
+		OnChangeLevel->Execute(NULL);
+		g_forwardCalled = true;
+
 		logger->LogMessage("[SM] Changed map to \"%s\"", map);
 		RETURN_META(MRES_IGNORED);
 	}
@@ -133,6 +156,10 @@ void NextMapManager::HookChangeLevel(const char *map, const char *unknown, const
 
 	if (newmap[0] == 0 || !g_HL2.IsMapValid(newmap))
 	{
+		OnChangeLevel->PushString(map);
+		OnChangeLevel->Execute(NULL);
+		g_forwardCalled = true;
+
 		RETURN_META(MRES_IGNORED);
 	}
 
@@ -140,6 +167,10 @@ void NextMapManager::HookChangeLevel(const char *map, const char *unknown, const
 
 	ke::SafeSprintf(m_tempChangeInfo.m_mapName, sizeof(m_tempChangeInfo.m_mapName), newmap);
 	ke::SafeSprintf(m_tempChangeInfo.m_changeReason, sizeof(m_tempChangeInfo.m_changeReason), "Normal level change");
+
+	OnChangeLevel->PushString(newmap);
+	OnChangeLevel->Execute(NULL);
+	g_forwardCalled = true;
 
 #if SOURCE_ENGINE != SE_DARKMESSIAH
 	RETURN_META_NEWPARAMS(MRES_IGNORED, &IVEngineServer::ChangeLevel, (newmap, unknown));
@@ -224,4 +255,13 @@ void CmdChangeLevelCallback()
 		ke::SafeSprintf(g_NextMap.m_tempChangeInfo.m_mapName, sizeof(g_NextMap.m_tempChangeInfo.m_mapName), command.Arg(1));
 		ke::SafeSprintf(g_NextMap.m_tempChangeInfo.m_changeReason, sizeof(g_NextMap.m_tempChangeInfo.m_changeReason), "changelevel Command");
 	}
+
+	/* Prevent double call */
+	if(!g_forwardCalled && g_HL2.IsMapValid(command.Arg(1)))
+	{
+		OnChangeLevel->PushString(command.Arg(1));
+		OnChangeLevel->Execute(NULL);
+	}
+
+	g_forwardCalled = false;
 }
