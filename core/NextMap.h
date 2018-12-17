@@ -37,6 +37,7 @@
 #include "sh_list.h"
 #include "sm_stringutil.h"
 #include <amtl/am-string.h>
+#include <IForwardSys.h>
 
 struct MapChangeData
 {
